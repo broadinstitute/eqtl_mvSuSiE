@@ -185,7 +185,7 @@ def main():
     parser.add_argument(
         "plink_prefix_path",
         type=str,
-        help="Feneral name for plink files, e.g. WGS.filtered.plink",
+        help="General name for plink files, e.g. WGS.filtered.plink",
     )
     parser.add_argument(
         "annotation_gtf", type=argparse.FileType("r"), help="Gene chr gtf"
@@ -208,6 +208,7 @@ def main():
     args = parser.parse_args()
 
     # Get universal covariates to regress out
+    print("Reading in covariates.")
     inferred_covs_pcs = pd.read_csv(args.inferred_cov_pcs, index_col=0)
     covariates_df = pd.read_csv(args.combined_covariates, sep="\t", index_col=0).T
     # TODO: Generalize for greater audience. for now we know we want ips_D0
@@ -219,6 +220,7 @@ def main():
     )
 
     # Get genotype and variant dfs
+    print("Getting genotype and phenotype info.")
     pr = genotypeio.PlinkReader(args.plink_prefix_path)
     genotype_df = pr.load_genotypes()
     variant_df = pr.bim.set_index("snp")[["chrom", "pos"]]
@@ -246,8 +248,10 @@ def main():
     variant_df = variant_df[~variant_df.duplicated(keep=False)]
 
     # Get gene annotation names
+    print("Getting gene annotation.")
     annot = qtl.annotation.Annotation(args.annotation_gtf)
 
+    print("Running susie & regressing.")
     susie_res_dfs_mymap, phenotype_regr_dfs, genotype_regr_dfs = call_map_susie(
         args.gene,
         variant_df,
@@ -259,6 +263,13 @@ def main():
     )
 
     # TODO: add output
+    print("Saving files.")
+    for group_name in args.sample_names:
+        phenotype_regr_dfs[group_name].to_csv(f'mvsusie_data_import/{args.gene}_tensorqtl_regressed_exp_{group_name}.csv', sep='\t')
+
+    # all of the genotype regr dfs are the same now for every day
+    genotype_regr_dfs['ips_D0'].to_csv(f'data/mvsusie_data_import/{args.gene}_tensorqtl_regressed_genotypes.csv', sep='\t')
+    print("Done.")
 
 
 if __name__ == "__main__":
