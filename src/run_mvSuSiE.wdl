@@ -18,12 +18,7 @@ workflow run_mvSuSiE {
             docker_image=docker_image
     }
 
-    call get_genotype_variant_tables {
-        input:
-
-    }
-
-    scatter (gene in get_genes.gene_list){
+    scatter (gene in get_genes.genes_list){
         call run_mvSuSiE {
             input:
                 gene=gene,
@@ -83,10 +78,14 @@ task run_mvSuSiE{
         gsutil -m cp ${plink_file_prefix}.bim my_plink.bim
         gsutil -m cp ${plink_file_prefix}.fam my_plink.fam
         gsutil -m cp ${annotation_gtf} annotation_gtf.gtf
-        mkdir expression_beds
-        gsutil -m cp ${sep=' ' expression_beds} expression_beds
-        # TODO: figure out how to read in expression beds nicely to the python file (names of files?)
-        python /get_tensorqtl_susie_map.py ${gene} ${inferred_cov_pcs} my_plink annotation_gtf.gtf ${combined_covariates} -s ${sep=' ' sample_names} -e ${sep expression_beds}
+        mkdir expression_beds_dir
+        gsutil -m cp ~{sep=" " expression_beds} expression_beds_dir
+        basenames=()
+        for f in ~{sep=" " expression_beds}
+        do
+            basenames+=expression_beds_dir/$(basename $f)
+        done
+        python /get_tensorqtl_susie_map.py ${gene} ${inferred_cov_pcs} my_plink annotation_gtf.gtf ${combined_covariates} -s ${sep=' ' sample_names} -e $basenames
 
 
     }
