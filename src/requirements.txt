@@ -4,3 +4,5 @@ qtl
 torch
 tensorqtl
 argparse
+gcsfs
+fsspec[gcs]

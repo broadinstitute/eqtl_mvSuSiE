@@ -9,7 +9,7 @@ workflow run_mvSuSiE {
         File inferred_cov_pcs # PCs from pipeline pt2 inferred covs (TODO: Add step for calculating this)
         String plink_file_prefix # ex. gs://landerlab-vcfs/StanleyCenter_CIRM_iPSC_WGS_callset_2021_01/maf01/WGS.filtered.plink
         String annotation_gtf # ex. gs://landerlab-20210915-ssong-macrophage-eqtls/resources/gencode.v26.GRCh38.genes.collapsed_only.gtf
-        String docker_image = 'us.gcr.io/landerlab-atacseq-200218/eqtl_mvsusie:0.3'
+        String docker_image = 'us.gcr.io/landerlab-atacseq-200218/eqtl_mvsusie:0.4'
     }
 
     call get_genes {
