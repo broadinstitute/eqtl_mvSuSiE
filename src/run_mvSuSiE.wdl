@@ -2,7 +2,10 @@ version 1.0
 
 workflow run_mvSuSiE {
     input {
-        Array[File] finemapped_qlts # ex. ips_D0.SuSiE_summary_with_cis_nom.parquet
+        Array[String] finemapped_qlts # ex. ips_D0.SuSiE_summary_with_cis_nom.parquet
+        String combined_covariates # universal covariates to regress out (ips D0) e.g. with_X_ips_D0.​5PEERs.​combined_covariates.​txt
+        Array[String] sample_names # ex. ips_D0 hep_D2 hep_D4 ...
+        Array[File] expression_beds # filepaths for expression beds, in same order as sample names
         File inferred_cov_pcs # PCs from pipeline pt2 inferred covs (TODO: Add step for calculating this)
         String plink_file_prefix # ex. gs://landerlab-vcfs/StanleyCenter_CIRM_iPSC_WGS_callset_2021_01/maf01/WGS.filtered.plink
         String annotation_gtf # ex. gs://landerlab-20210915-ssong-macrophage-eqtls/resources/gencode.v26.GRCh38.genes.collapsed_only.gtf
@@ -11,10 +14,23 @@ workflow run_mvSuSiE {
 
     call get_genes {
         input:
-            finemapped_qlts=finemapped_qlts
+            finemapped_qlts=finemapped_qlts,
+            docker_image=docker_image
     }
 
-
+    scatter (gene in get_genes.gene_list){
+        call run_mvSuSiE {
+            input:
+                gene=gene,
+                combined_covariates=combined_covariates,
+                sample_names=sample_names,
+                expression_beds=expression_beds,
+                inferred_cov_pcs=inferred_cov_pcs,
+                plink_file_prefix=plink_file_prefix,
+                annotation_gtf=annotation_gtf,
+                docker_image=docker_image
+        }
+    }
 
     output {
 
@@ -23,7 +39,8 @@ workflow run_mvSuSiE {
 
 task get_genes {
     input {
-        Array[File] finemapped_qlts
+        Array[String] finemapped_qlts
+        String docker_image
     }
     command {
         set -ex
@@ -39,5 +56,32 @@ task get_genes {
         cpu: 1
         memory: "16GB"
         preemptible: 1
+    }
+}
+
+task run_mvSuSiE{
+    input {
+        String gene
+        String combined_covariates
+        Array[String] sample_names
+        Array[File] expression_beds
+        File inferred_cov_pcs
+        String plink_file_prefix
+        String annotation_gtf
+        String docker_image
+    }
+
+    String annotation_gtf_base = basename(annotation_gtf)
+    String plink_prefix_path = basename(plink_file_prefix)
+
+    command {
+        set -ex
+        (git clone https://github.com/broadinstitute/eqtl_mvSuSiE.git /app ; cd /app)
+        gsutil cp ${plink_file_prefix}* .
+        gsutil cp ${annotation_gtf} ${annotation_gtf_base}
+
+
+
+
     }
 }
