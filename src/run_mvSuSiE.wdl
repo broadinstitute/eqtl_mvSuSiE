@@ -47,7 +47,7 @@ task get_genes {
     command {
         set -ex
         (git clone https://github.com/broadinstitute/eqtl_mvSuSiE.git /app ; cd /app)
-        python /app/get_genes.py -q ${sep=' ' finemapped_qlts}
+        python /app/src/get_genes.py -q ${sep=' ' finemapped_qlts}
         head -5 list_of_genes.txt > only_five_genes.txt
     }
     output {
@@ -88,7 +88,7 @@ task run_mvSuSiE{
         do
             basenames+=expression_beds_dir/$(basename $f)
         done
-        python /app/get_tensorqtl_susie_map.py ${gene} ${inferred_cov_pcs} my_plink annotation_gtf.gtf ${combined_covariates} -s ${sep=' ' sample_names} -e $basenames
+        python /app/src/get_tensorqtl_susie_map.py ${gene} ${inferred_cov_pcs} my_plink annotation_gtf.gtf ${combined_covariates} -s ${sep=' ' sample_names} -e $basenames
 
     }
 
