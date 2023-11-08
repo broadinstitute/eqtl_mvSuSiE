@@ -3,3 +3,4 @@ numpy==1.23
 qtl
 torch
 tensorqtl
+argparse
