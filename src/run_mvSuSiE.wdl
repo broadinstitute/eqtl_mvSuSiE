@@ -33,7 +33,9 @@ workflow run_mvSuSiE {
     }
 
     output {
-
+        Array[String] gene_list = get_genes.genes_list
+        Array[Array[File]] phenotype_files = run_mvSuSiE.phenotype_files
+        Array[File] genotype_files = run_mvSuSiE.genotype_file
     }
 }
 
@@ -45,10 +47,11 @@ task get_genes {
     command {
         set -ex
         (git clone https://github.com/broadinstitute/eqtl_mvSuSiE.git /app ; cd /app)
-        python /get_genes.py -q ${sep=' ' finemapped_qlts}
+        python /app/get_genes.py -q ${sep=' ' finemapped_qlts}
+        head -5 list_of_genes.txt > only_five_genes.txt
     }
     output {
-        Array[String] genes_list = read_lines("list_of_genes.txt")
+        Array[String] genes_list = read_lines("only_five_genes.txt")
     }
 
     runtime {
@@ -85,8 +88,19 @@ task run_mvSuSiE{
         do
             basenames+=expression_beds_dir/$(basename $f)
         done
-        python /get_tensorqtl_susie_map.py ${gene} ${inferred_cov_pcs} my_plink annotation_gtf.gtf ${combined_covariates} -s ${sep=' ' sample_names} -e $basenames
+        python /app/get_tensorqtl_susie_map.py ${gene} ${inferred_cov_pcs} my_plink annotation_gtf.gtf ${combined_covariates} -s ${sep=' ' sample_names} -e $basenames
 
+    }
 
+    output {
+        Array[File] phenotype_files = glob("${gene}_tensorqtl_regressed_exp_*")
+        File genotype_file = glob("${gene}_tensorqtl_regressed_genotypes.csv")
+    }
+
+    runtime {
+        docker: docker_image
+        cpu: 1
+        memory: "16GB"
+        preemptible: 1
     }
 }

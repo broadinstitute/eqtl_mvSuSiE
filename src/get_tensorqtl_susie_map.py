@@ -265,10 +265,10 @@ def main():
     # TODO: add output
     print("Saving files.")
     for group_name in args.sample_names:
-        phenotype_regr_dfs[group_name].to_csv(f'mvsusie_data_import/{args.gene}_tensorqtl_regressed_exp_{group_name}.csv', sep='\t')
+        phenotype_regr_dfs[group_name].to_csv(f'{args.gene}_tensorqtl_regressed_exp_{group_name}.csv', sep='\t')
 
     # all of the genotype regr dfs are the same now for every day
-    genotype_regr_dfs['ips_D0'].to_csv(f'data/mvsusie_data_import/{args.gene}_tensorqtl_regressed_genotypes.csv', sep='\t')
+    genotype_regr_dfs['ips_D0'].to_csv(f'{args.gene}_tensorqtl_regressed_genotypes.csv', sep='\t')
     print("Done.")
 
 
