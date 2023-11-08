@@ -79,7 +79,8 @@ task run_mvSuSiE{
         (git clone https://github.com/broadinstitute/eqtl_mvSuSiE.git /app ; cd /app)
         gsutil cp ${plink_file_prefix}* .
         gsutil cp ${annotation_gtf} ${annotation_gtf_base}
-        # TODO: figure out how to read in expression beds nicely
+        gsutil cp ${sep=' ' expression_beds} .
+        # TODO: figure out how to read in expression beds nicely to the python file (names of files?)
 
 
 
