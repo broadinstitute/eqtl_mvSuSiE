@@ -218,6 +218,10 @@ def main():
         stagnant_covs, left_index=True, right_index=True
     )
 
+    # Get gene annotation names
+    print("Getting gene annotation.")
+    annot = qtl.annotation.Annotation(args.annotation_gtf.name)
+
     # Get genotype and variant dfs
     print("Getting genotype and phenotype info.")
     pr = genotypeio.PlinkReader(args.plink_prefix_path)
@@ -245,10 +249,6 @@ def main():
     # Delete duplicates
     genotype_df = genotype_df[~variant_df.duplicated(keep=False)]
     variant_df = variant_df[~variant_df.duplicated(keep=False)]
-
-    # Get gene annotation names
-    print("Getting gene annotation.")
-    annot = qtl.annotation.Annotation(args.annotation_gtf)
 
     print("Running susie & regressing.")
     susie_res_dfs_mymap, phenotype_regr_dfs, genotype_regr_dfs = call_map_susie(
