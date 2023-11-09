@@ -198,7 +198,7 @@ def main():
     parser.add_argument(
         "-s", dest="sample_names", nargs="+", default=[], help="Array of sample names"
     )
-    parser.add_arguments(
+    parser.add_argument(
         "-e",
         dest="expression_beds",
         nargs="+",
