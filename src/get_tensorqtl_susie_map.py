@@ -36,7 +36,6 @@ def my_map_susie(
     if igc.n_phenotypes == 0:
         raise ValueError("No valid phenotypes found.")
 
-    start_time = time.time()
     copy_keys = ["pip", "sets", "converged", "elbo", "niter", "lbf_variable"]
     susie_summary = []
 
@@ -227,7 +226,7 @@ def main():
     variant_df.index = (
         pr.bim["chrom"]
         + "_"
-        + pr.bim["po.s"].astype(str)
+        + pr.bim["pos"].astype(str)
         + "_"
         + pr.bim["a1"]
         + "_"
@@ -262,7 +261,6 @@ def main():
         args.expression_beds,
     )
 
-    # TODO: add output
     print("Saving files.")
     for group_name in args.sample_names:
         phenotype_regr_dfs[group_name].to_csv(f'{args.gene}_tensorqtl_regressed_exp_{group_name}.csv', sep='\t')
