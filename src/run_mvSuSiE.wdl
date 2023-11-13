@@ -86,7 +86,7 @@ task run_mvSuSiE{
         basenames=()
         for f in ~{sep=" " expression_beds}
         do
-            basenames+=expression_beds_dir/$(basename $f),
+            basenames+=,expression_beds_dir/$(basename $f)
         done
         python /app/src/get_tensorqtl_susie_map.py ${gene} ${inferred_cov_pcs} my_plink annotation_gtf.gtf ${combined_covariates} -s ${sep=' ' sample_names} -e $basenames
 

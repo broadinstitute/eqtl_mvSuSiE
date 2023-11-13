@@ -258,7 +258,7 @@ def main():
         universal_covariates,
         annot,
         args.sample_names,
-        args.expression_beds.split(',')[:-1],
+        args.expression_beds.split(',')[1:],
     )
 
     print("Saving files.")
