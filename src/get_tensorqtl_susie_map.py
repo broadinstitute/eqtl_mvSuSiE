@@ -263,6 +263,7 @@ def main():
 
     print("Saving files.")
     for group_name in args.sample_names:
+        phenotype_regr_dfs[group_name] = phenotype_regr_dfs[group_name].rename(index={0:group_name})
         phenotype_regr_dfs[group_name].to_csv(f'{args.gene}_tensorqtl_regressed_exp_{group_name}.csv', sep='\t')
 
     # all of the genotype regr dfs are the same now for every day

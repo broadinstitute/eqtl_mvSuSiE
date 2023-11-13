@@ -30,12 +30,19 @@ workflow run_mvSuSiE {
                 annotation_gtf=annotation_gtf,
                 docker_image=docker_image
         }
+
+        call concat_phenotypes {
+            input:
+                phenotype_files=run_mvSuSiE.phenotype_files,
+                gene=gene,
+                docker_image=docker_image
+        }
     }
 
     output {
         Array[String] gene_list = get_genes.genes_list
-        Array[Array[File]] phenotype_files = run_mvSuSiE.phenotype_files
-        Array[File] genotype_files = run_mvSuSiE.genotype_file
+        Array[File] phenotype_file = concat_phenotypes.phenotype_file
+        Array[File] genotype_file = run_mvSuSiE.genotype_file
     }
 }
 
@@ -94,7 +101,7 @@ task run_mvSuSiE{
 
     output {
         Array[File] phenotype_files = glob("${gene}_tensorqtl_regressed_exp_*")
-        File genotype_file = glob("${gene}_tensorqtl_regressed_genotypes.csv")
+        File genotype_file = "${gene}_tensorqtl_regressed_genotypes.csv"
     }
 
     runtime {
@@ -103,4 +110,27 @@ task run_mvSuSiE{
         memory: "16GB"
         preemptible: 1
     }
+}
+
+task concat_phenotypes {
+    input {
+        Array[File] phenotype_files
+        String gene
+        String docker_image
+    }
+    command {
+        set -ex
+        (git clone https://github.com/broadinstitute/eqtl_mvSuSiE.git /app ; cd /app)
+        python /app/src/concat_phenotypes.py ${gene} -p ${sep=' ' phenotype_files}
+    }
+    output {
+        File phenotype_file = "${gene}_tensorqtl_regressed_phenotypes.csv"
+    }
+
+    runtime {
+            docker: docker_image
+            cpu: 1
+            memory: "16GB"
+            preemptible: 1
+        }
 }
