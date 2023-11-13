@@ -200,9 +200,8 @@ def main():
     parser.add_argument(
         "-e",
         dest="expression_beds",
-        nargs="+",
-        default=[],
-        help="Array of expression bed files. Must be in same order as sample names",
+        type=str,
+        help="String of ',' separated expression bed files. Must be in same order as sample names",
     )
     args = parser.parse_args()
 
@@ -251,6 +250,7 @@ def main():
     variant_df = variant_df[~variant_df.duplicated(keep=False)]
 
     print("Running susie & regressing.")
+    # expression_beds files are read in as a ',' separated str (for ease because wdl is weird about bash variables)
     susie_res_dfs_mymap, phenotype_regr_dfs, genotype_regr_dfs = call_map_susie(
         args.gene,
         variant_df,
@@ -258,7 +258,7 @@ def main():
         universal_covariates,
         annot,
         args.sample_names,
-        args.expression_beds,
+        args.expression_beds.split(',')[:-1],
     )
 
     print("Saving files.")
