@@ -9,17 +9,19 @@ workflow run_mvSuSiE {
         File inferred_cov_pcs # PCs from pipeline pt2 inferred covs (TODO: Add step for calculating this)
         String plink_file_prefix # ex. gs://landerlab-vcfs/StanleyCenter_CIRM_iPSC_WGS_callset_2021_01/maf01/WGS.filtered.plink
         String annotation_gtf # ex. gs://landerlab-20210915-ssong-macrophage-eqtls/resources/gencode.v26.GRCh38.genes.collapsed_only.gtf
-        String docker_image = 'us.gcr.io/landerlab-atacseq-200218/eqtl_mvsusie:0.5'
+        File mashr_strong_prior
+        String docker_image_py = 'us.gcr.io/landerlab-atacseq-200218/eqtl_mvsusie:0.5'
+        String docker_image_r = 'us.gcr.io/landerlab-atacseq-200218/eqtl_mvsusie_r:0.2'
     }
 
     call get_genes {
         input:
             finemapped_qlts=finemapped_qlts,
-            docker_image=docker_image
+            docker_image=docker_image_py
     }
 
     scatter (gene in get_genes.genes_list){
-        call run_mvSuSiE {
+        call run_qtl_susie_regression {
             input:
                 gene=gene,
                 combined_covariates=combined_covariates,
@@ -28,21 +30,37 @@ workflow run_mvSuSiE {
                 inferred_cov_pcs=inferred_cov_pcs,
                 plink_file_prefix=plink_file_prefix,
                 annotation_gtf=annotation_gtf,
-                docker_image=docker_image
+                docker_image=docker_image_py
         }
 
         call concat_phenotypes {
             input:
-                phenotype_files=run_mvSuSiE.phenotype_files,
+                phenotype_files=run_qtl_susie_regression.phenotype_files,
                 gene=gene,
-                docker_image=docker_image
+                docker_image=docker_image_py
         }
+
+        call run_mvSuSiE {
+            input:
+                gene=gene,
+                mashr_strong_prior=mashr_strong_prior,
+                genotype_file=run_qtl_susie_regression.genotype_file,
+                phenotype_file=concat_phenotypes.phenotype_file,
+                sample_names=sample_names,
+                docker_image=docker_image_r
+        }
+    }
+
+    call gather_mvsusie_outputs {
+        input:
+            mvsusie_results=run_mvSuSiE.mvsusie_results,
+            docker_image=docker_image_py
     }
 
     output {
         Array[String] gene_list = get_genes.genes_list
-        Array[File] phenotype_file = concat_phenotypes.phenotype_file
-        Array[File] genotype_file = run_mvSuSiE.genotype_file
+        Array[File] mvsusie_results = run_mvSuSiE.mvsusie_results
+        File mvsusie_results_all = gather_mvsusie_outputs.mvsusie_results_all
     }
 }
 
@@ -69,7 +87,7 @@ task get_genes {
     }
 }
 
-task run_mvSuSiE{
+task run_qtl_susie_regression {
     input {
         String gene
         String combined_covariates
@@ -132,5 +150,52 @@ task concat_phenotypes {
             cpu: 1
             memory: "16GB"
             preemptible: 1
-        }
+    }
+}
+
+task run_mvSuSiE {
+    input {
+        String gene
+        File mashr_strong_prior
+        File genotype_file
+        File phenotype_file
+        Array[String] sample_names
+        String docker_image
+    }
+
+    command {
+        set -ex
+        (git clone https://github.com/broadinstitute/eqtl_mvSuSiE.git /app ; cd /app)
+        Rscript src/run_mvSuSiE.R ${gene} ${mashr_strong_prior} ${genotype_file} ${phenotype_file} ${sep=',' sample_names}
+    }
+    output {
+        File mvsusie_results = "${gene}_mvsusie_final_output.csv"
+    }
+    runtime {
+            docker: docker_image
+            cpu: 1
+            memory: "16GB"
+            preemptible: 1
+    }
+}
+
+task gather_mvsusie_outputs {
+    input {
+        Array[File] mvsusie_results
+        String docker_image
+    }
+    command {
+        set -ex
+        head -n 1 ${mvsusie_results[0]} > mvsusie_final_output_all.csv
+        tail -n +2 -q *_mvsusie_final_output.csv >> mvsusie_final_output_all.csv
+    }
+    output {
+        File mvsusie_results_all = "mvsusie_final_output_all.csv"
+    }
+    runtime {
+            docker: docker_image
+            cpu: 1
+            memory: "16GB"
+            preemptible: 1
+    }
 }
