@@ -67,6 +67,6 @@ if (is.null(fit_mv$sets$cs)){
 }
 colnames(mvsusie_data_frame) <- c('phenotype_id', 'Method', 'Variant_id', 'PIP', 'Credible Set', group_names)
 
-write.tsv(mvsusie_data_frame, paste0(gene_name, "_mvsusie_final_output.txt"),
+write.csv(mvsusie_data_frame, paste0(gene_name, "_mvsusie_final_output.csv"),
     row.names=FALSE)
 message("Done.")
