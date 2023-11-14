@@ -166,7 +166,7 @@ task run_mvSuSiE {
     command {
         set -ex
         (git clone https://github.com/broadinstitute/eqtl_mvSuSiE.git /app ; cd /app)
-        Rscript src/run_mvSuSiE.R ${gene} ${mashr_strong_prior} ${genotype_file} ${phenotype_file} ${sep=',' sample_names}
+        Rscript /app/src/run_mvSuSiE.R ${gene} ${mashr_strong_prior} ${genotype_file} ${phenotype_file} ${sep=',' sample_names}
     }
     output {
         File mvsusie_results = "${gene}_mvsusie_final_output.csv"
