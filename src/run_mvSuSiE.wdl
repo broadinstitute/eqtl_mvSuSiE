@@ -186,8 +186,10 @@ task gather_mvsusie_outputs {
     }
     command {
         set -ex
+        mkdir mvsusie_results_dir
+        mv ~{sep=" " mvsusie_results} mvsusie_results_dir
         head -n 1 ${mvsusie_results[0]} > mvsusie_final_output_all.csv
-        tail -n +2 -q *_mvsusie_final_output.csv >> mvsusie_final_output_all.csv
+        tail -n +2 -q mvsusie_results_dir/* >> mvsusie_final_output_all.csv
     }
     output {
         File mvsusie_results_all = "mvsusie_final_output_all.csv"
