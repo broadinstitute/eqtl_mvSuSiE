@@ -76,7 +76,7 @@ task get_genes {
         head -5 list_of_genes.txt > only_five_genes.txt
     }
     output {
-        Array[String] genes_list = read_lines("only_five_genes.txt")
+        Array[String] genes_list = read_lines("list_of_genes.txt")
     }
 
     runtime {
