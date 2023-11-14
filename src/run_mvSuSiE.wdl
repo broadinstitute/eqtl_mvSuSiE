@@ -167,9 +167,10 @@ task run_mvSuSiE {
         set -ex
         (git clone https://github.com/broadinstitute/eqtl_mvSuSiE.git /app ; cd /app)
         Rscript /app/src/run_mvSuSiE.R ${gene} ${mashr_strong_prior} ${genotype_file} ${phenotype_file} ${sep=',' sample_names}
+        tr ',' '\t' < ${gene}_mvsusie_final_output.csv > ${gene}_mvsusie_final_output.tsv
     }
     output {
-        File mvsusie_results = "${gene}_mvsusie_final_output.csv"
+        File mvsusie_results = "${gene}_mvsusie_final_output.tsv"
     }
     runtime {
             docker: docker_image
@@ -181,18 +182,20 @@ task run_mvSuSiE {
 
 task gather_mvsusie_outputs {
     input {
-        Array[File] mvsusie_results
+        Array[String] mvsusie_results
         String docker_image
     }
+    String first_file = basename(mvsusie_results[0])
+
     command {
         set -ex
         mkdir mvsusie_results_dir
-        mv ~{sep=" " mvsusie_results} mvsusie_results_dir
-        head -n 1 mvsusie_results_dir/${mvsusie_results[0]} > mvsusie_final_output_all.csv
-        tail -n +2 -q mvsusie_results_dir/* >> mvsusie_final_output_all.csv
+        gsutil -m cp ~{sep=" " mvsusie_results} mvsusie_results_dir
+        head -n 1 mvsusie_results_dir/${first_file} > mvsusie_final_output_all.tsv
+        tail -n +2 -q mvsusie_results_dir/* >> mvsusie_final_output_all.tsv
     }
     output {
-        File mvsusie_results_all = "mvsusie_final_output_all.csv"
+        File mvsusie_results_all = "mvsusie_final_output_all.tsv"
     }
     runtime {
             docker: docker_image
