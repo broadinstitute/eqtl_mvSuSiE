@@ -281,8 +281,11 @@ def main():
         pd.concat(phenotypes, axis=1).to_csv(f'{gene_name}_tensorqtl_regressed_phenotypes.csv', sep='\t')
 
         # all of the genotype regr dfs are the same now for every day
+        # TODO: generalize for user
+        # this will throw an error if you don't have ips d0!!
         genotype_regr_dfs['ips_D0'].to_csv(f'{gene_name}_tensorqtl_regressed_genotypes.csv', sep='\t')
         completed_genes.append(gene_name)
+
     with open('list_of_completed_python_genes.txt', mode='wt', encoding='utf-8') as fh:
         fh.write(' '.join(completed_genes))
 
