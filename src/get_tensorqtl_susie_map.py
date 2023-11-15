@@ -70,25 +70,25 @@ def my_map_susie(
         )  # phenotypes x samples
 
         ## RUN SUSIE
-        res = susie.susie(
-            genotypes_res_t.T,
-            phenotype_res_t.T,
-            L=10,
-            scaled_prior_variance=0.2,
-            coverage=0.95,
-            min_abs_corr=0.5,
-            estimate_residual_variance=True,
-            estimate_prior_variance=True,
-            tol=1e-3,
-            max_iter=100,
-        )
+        # res = susie.susie(
+        #     genotypes_res_t.T,
+        #     phenotype_res_t.T,
+        #     L=10,
+        #     scaled_prior_variance=0.2,
+        #     coverage=0.95,
+        #     min_abs_corr=0.5,
+        #     estimate_residual_variance=True,
+        #     estimate_prior_variance=True,
+        #     tol=1e-3,
+        #     max_iter=100,
+        # )
 
-        af_t = genotypes_t.sum(1) / (2 * genotypes_t.shape[1])
-        res["pip"] = pd.DataFrame(
-            {"pip": res["pip"], "af": af_t.cpu().numpy()}, index=variant_ids
-        )
+        # af_t = genotypes_t.sum(1) / (2 * genotypes_t.shape[1])
+        # res["pip"] = pd.DataFrame(
+        #     {"pip": res["pip"], "af": af_t.cpu().numpy()}, index=variant_ids
+        # )
 
-        return res["pip"], phenotype_res_t, genotypes_res_t, genotype_range
+        return phenotype_res_t, genotypes_res_t, genotype_range
 
 
 def call_map_susie(
@@ -107,7 +107,7 @@ def call_map_susie(
     """
     phenotype_dfs = {}
     phenotype_pos_dfs = {}
-    susie_res_dfs_mymap = {}
+    # susie_res_dfs_mymap = {}
 
     phenotype_regr_dfs = {}
     genotype_regr_dfs = {}
@@ -145,7 +145,6 @@ def call_map_susie(
 
         # fine-map
         (
-            susie_res_dfs_mymap[group_name],
             phenotype_regr_dfs[group_name],
             genotype_regr_dfs[group_name],
             genotype_ranges[group_name],
@@ -168,14 +167,13 @@ def call_map_susie(
             columns=phenotype_dfs[group_name].columns,
         )
 
-    return susie_res_dfs_mymap, phenotype_regr_dfs, genotype_regr_dfs
+    return phenotype_regr_dfs, genotype_regr_dfs
 
 
 def main():
     parser = argparse.ArgumentParser(
         description="For a given gene, get covariates, phenotypes, genotypes for every day. Run susie and get regressed results for mvsusie"
     )
-    parser.add_argument("gene", type=str)
     parser.add_argument(
         "inferred_cov_pcs",
         type=str,
@@ -194,6 +192,10 @@ def main():
         type=str,
         help="Combined covariates from pipeline pt2 to regress out",
     )
+    parser.add_argument("-g",
+                        dest="genes", nargs="+",
+                        default=[],
+                        help="Array of gene names")
     parser.add_argument(
         "-s", dest="sample_names", nargs="+", default=[], help="Array of sample names"
     )
@@ -204,6 +206,8 @@ def main():
         help="String of ',' separated expression bed files. Must be in same order as sample names",
     )
     args = parser.parse_args()
+
+    print(args.genes)
 
     # Get universal covariates to regress out
     print("Reading in covariates.")
@@ -249,25 +253,29 @@ def main():
     genotype_df = genotype_df[~variant_df.duplicated(keep=False)]
     variant_df = variant_df[~variant_df.duplicated(keep=False)]
 
-    print("Running susie & regressing.")
-    # expression_beds files are read in as a ',' separated str (for ease because wdl is weird about bash variables)
-    susie_res_dfs_mymap, phenotype_regr_dfs, genotype_regr_dfs = call_map_susie(
-        args.gene,
-        variant_df,
-        genotype_df,
-        universal_covariates,
-        annot,
-        args.sample_names,
-        args.expression_beds.split(',')[1:],
-    )
+    print("Running susie & regressing for each gene.")
+    for gene_name in args.genes:
+        # expression_beds files are read in as a ',' separated str (for ease because wdl is weird about bash variables)
+        phenotype_regr_dfs, genotype_regr_dfs = call_map_susie(
+            gene_name,
+            variant_df,
+            genotype_df,
+            universal_covariates,
+            annot,
+            args.sample_names,
+            args.expression_beds.split(',')[1:],
+        )
 
-    print("Saving files.")
-    for group_name in args.sample_names:
-        phenotype_regr_dfs[group_name] = phenotype_regr_dfs[group_name].rename(index={0:group_name})
-        phenotype_regr_dfs[group_name].to_csv(f'{args.gene}_tensorqtl_regressed_exp_{group_name}.csv', sep='\t')
+        print("Saving files.")
+        phenotypes = []
+        for group_name in args.sample_names:
+            phenotype_regr_dfs[group_name] = phenotype_regr_dfs[group_name].rename(index={0:group_name})
+            phenotypes.append(phenotype_regr_dfs[group_name].T)
+        # concat phenotype dfs into one large regressed expression/phenotypes df
+        pd.concat(phenotypes, axis=1).to_csv(f'{gene_name}_tensorqtl_regressed_phenotypes.csv', sep='\t')
 
-    # all of the genotype regr dfs are the same now for every day
-    genotype_regr_dfs['ips_D0'].to_csv(f'{args.gene}_tensorqtl_regressed_genotypes.csv', sep='\t')
+        # all of the genotype regr dfs are the same now for every day
+        genotype_regr_dfs['ips_D0'].to_csv(f'{gene_name}_tensorqtl_regressed_genotypes.csv', sep='\t')
     print("Done.")
 
 

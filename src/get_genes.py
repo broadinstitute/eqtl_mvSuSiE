@@ -18,4 +18,6 @@ if __name__ == '__main__':
     genes = [gene for gene, count in lst.items() if (count >= 3 and count < 6)]
 
     with open('list_of_genes.txt', mode='wt', encoding='utf-8') as fh:
-        fh.write('\n'.join(genes))
+        # source https://stackoverflow.com/questions/10188453/python-insert-line-break-every-x-number-of-elements
+        for i, m in enumerate(genes, 1):
+            fh.write(m + [' ', '\n'][i % 5 == 0])

@@ -20,10 +20,10 @@ workflow run_mvSuSiE {
             docker_image=docker_image_py
     }
 
-    scatter (gene in get_genes.genes_list){
+    scatter (five_genes in get_genes.genes_list){
         call run_qtl_susie_regression {
             input:
-                gene=gene,
+                genes=five_genes,
                 combined_covariates=combined_covariates,
                 sample_names=sample_names,
                 expression_beds=expression_beds,
@@ -33,19 +33,12 @@ workflow run_mvSuSiE {
                 docker_image=docker_image_py
         }
 
-        call concat_phenotypes {
-            input:
-                phenotype_files=run_qtl_susie_regression.phenotype_files,
-                gene=gene,
-                docker_image=docker_image_py
-        }
-
         call run_mvSuSiE {
             input:
-                gene=gene,
+                genes=five_genes,
                 mashr_strong_prior=mashr_strong_prior,
-                genotype_file=run_qtl_susie_regression.genotype_file,
-                phenotype_file=concat_phenotypes.phenotype_file,
+                genotype_files=run_qtl_susie_regression.genotype_files,
+                phenotype_files=run_qtl_susie_regression.phenotype_files,
                 sample_names=sample_names,
                 docker_image=docker_image_r
         }
@@ -89,7 +82,7 @@ task get_genes {
 
 task run_qtl_susie_regression {
     input {
-        String gene
+        String genes # space separated string list of genes
         String combined_covariates
         Array[String] sample_names
         Array[File] expression_beds
@@ -113,13 +106,13 @@ task run_qtl_susie_regression {
         do
             basenames+=,expression_beds_dir/$(basename $f)
         done
-        python /app/src/get_tensorqtl_susie_map.py ${gene} ${inferred_cov_pcs} my_plink annotation_gtf.gtf ${combined_covariates} -s ${sep=' ' sample_names} -e $basenames
+        python /app/src/get_tensorqtl_susie_map.py ${inferred_cov_pcs} my_plink annotation_gtf.gtf ${combined_covariates} -g ${genes} -s ${sep=' ' sample_names} -e $basenames
 
     }
 
     output {
-        Array[File] phenotype_files = glob("${gene}_tensorqtl_regressed_exp_*")
-        File genotype_file = "${gene}_tensorqtl_regressed_genotypes.csv"
+        Array[File] phenotype_files = glob("*_tensorqtl_regressed_phenotypes.csv")
+        Array[File] genotype_files = glob("*_tensorqtl_regressed_genotypes.csv")
     }
 
     runtime {
@@ -130,35 +123,12 @@ task run_qtl_susie_regression {
     }
 }
 
-task concat_phenotypes {
-    input {
-        Array[File] phenotype_files
-        String gene
-        String docker_image
-    }
-    command {
-        set -ex
-        (git clone https://github.com/broadinstitute/eqtl_mvSuSiE.git /app ; cd /app)
-        python /app/src/concat_phenotypes.py ${gene} -p ${sep=' ' phenotype_files}
-    }
-    output {
-        File phenotype_file = "${gene}_tensorqtl_regressed_phenotypes.csv"
-    }
-
-    runtime {
-            docker: docker_image
-            cpu: 1
-            memory: "16GB"
-            preemptible: 1
-    }
-}
-
 task run_mvSuSiE {
     input {
-        String gene
+        String genes # space separated string list of genes
         File mashr_strong_prior
-        File genotype_file
-        File phenotype_file
+        Array[String] genotype_files
+        Array[String] phenotype_files
         Array[String] sample_names
         String docker_image
     }
@@ -166,11 +136,20 @@ task run_mvSuSiE {
     command {
         set -ex
         (git clone https://github.com/broadinstitute/eqtl_mvSuSiE.git /app ; cd /app)
-        Rscript /app/src/run_mvSuSiE.R ${gene} ${mashr_strong_prior} ${genotype_file} ${phenotype_file} ${sep=',' sample_names}
-        tr ',' '\t' < ${gene}_mvsusie_final_output.csv > ${gene}_mvsusie_final_output.tsv
+        mkdir genotype_files_dir
+        mkdir phenotype_files_dir
+        gsutil -m cp ~{sep=" " genotype_files} genotype_files_dir
+        gsutil -m cp ~{sep=" " phenotype_files} phenotype_files_dir
+        Rscript /app/src/run_mvSuSiE.R ${mashr_strong_prior} ${sep=',' sample_names} ${genes}
+
+        headerfile="$(ls *_mvsusie_final_output.csv | tail -n1)"
+        head -n 1 $headerfile > mvsusie_final_output_five.csv
+        tail -n +2 -q *_mvsusie_final_output.csv >> mvsusie_final_output_five.csv
+        tr ',' '\t' < mvsusie_final_output_five.csv > mvsusie_final_output_five.tsv
     }
+
     output {
-        File mvsusie_results = "${gene}_mvsusie_final_output.tsv"
+        File mvsusie_results = "mvsusie_final_output_five.tsv"
     }
     runtime {
             docker: docker_image
