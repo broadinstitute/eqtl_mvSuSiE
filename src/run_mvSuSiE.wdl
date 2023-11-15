@@ -11,7 +11,7 @@ workflow run_mvSuSiE {
         String annotation_gtf # ex. gs://landerlab-20210915-ssong-macrophage-eqtls/resources/gencode.v26.GRCh38.genes.collapsed_only.gtf
         File mashr_strong_prior
         String docker_image_py = 'us.gcr.io/landerlab-atacseq-200218/eqtl_mvsusie:0.5'
-        String docker_image_r = 'us.gcr.io/landerlab-atacseq-200218/eqtl_mvsusie_r:0.2'
+        String docker_image_r = 'us.gcr.io/landerlab-atacseq-200218/eqtl_mvsusie_r:0.3'
     }
 
     call get_genes {
