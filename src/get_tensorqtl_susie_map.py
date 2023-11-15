@@ -139,6 +139,8 @@ def call_map_susie(
         # filter the phenotype dfs ahead of time too to only be the donors that have data in every day
         phenotype_dfs[group_name] = phenotype_dfs[group_name][gt_df.columns]
 
+        if gene_str not in phenotype_dfs[group_name].index:
+            raise Exception("Gene not expressed in at least one day. Skipping gene.")
         # cis permutation results
         # do we need this here? or just for picking genes
         # cis_dfs[group_name] = pd.read_parquet(f'gs://landerlab-20220124-ssong-village-eqtls/analysis_freeze/{group_name}/{group_name}.5PEERs.cis_qtl.sigificant.parquet')
@@ -256,15 +258,18 @@ def main():
     print("Running susie & regressing for each gene.")
     for gene_name in args.genes:
         # expression_beds files are read in as a ',' separated str (for ease because wdl is weird about bash variables)
-        phenotype_regr_dfs, genotype_regr_dfs = call_map_susie(
-            gene_name,
-            variant_df,
-            genotype_df,
-            universal_covariates,
-            annot,
-            args.sample_names,
-            args.expression_beds.split(',')[1:],
-        )
+        try:
+            phenotype_regr_dfs, genotype_regr_dfs = call_map_susie(
+                gene_name,
+                variant_df,
+                genotype_df,
+                universal_covariates,
+                annot,
+                args.sample_names,
+                args.expression_beds.split(',')[1:],
+            )
+        except:
+            continue
 
         print("Saving files.")
         phenotypes = []
