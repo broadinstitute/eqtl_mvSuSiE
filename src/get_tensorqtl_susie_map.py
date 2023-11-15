@@ -256,6 +256,7 @@ def main():
     variant_df = variant_df[~variant_df.duplicated(keep=False)]
 
     print("Running susie & regressing for each gene.")
+    completed_genes = []
     for gene_name in args.genes:
         # expression_beds files are read in as a ',' separated str (for ease because wdl is weird about bash variables)
         try:
@@ -281,6 +282,10 @@ def main():
 
         # all of the genotype regr dfs are the same now for every day
         genotype_regr_dfs['ips_D0'].to_csv(f'{gene_name}_tensorqtl_regressed_genotypes.csv', sep='\t')
+        completed_genes.append(gene_name)
+    with open('list_of_completed_python_genes.txt', mode='wt', encoding='utf-8') as fh:
+        fh.write(' '.join(completed_genes))
+
     print("Done.")
 
 

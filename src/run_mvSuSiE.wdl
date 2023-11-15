@@ -35,7 +35,7 @@ workflow run_mvSuSiE {
 
         call run_mvSuSiE {
             input:
-                genes=five_genes,
+                genes=run_qtl_susie_regression.completed_python_genes,
                 mashr_strong_prior=mashr_strong_prior,
                 genotype_files=run_qtl_susie_regression.genotype_files,
                 phenotype_files=run_qtl_susie_regression.phenotype_files,
@@ -113,6 +113,7 @@ task run_qtl_susie_regression {
     output {
         Array[File] phenotype_files = glob("*_tensorqtl_regressed_phenotypes.csv")
         Array[File] genotype_files = glob("*_tensorqtl_regressed_genotypes.csv")
+        String completed_python_genes = read_lines("list_of_completed_python_genes.txt")[0]
     }
 
     runtime {
