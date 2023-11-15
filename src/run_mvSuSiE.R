@@ -1,6 +1,5 @@
 args <- commandArgs(trailingOnly = TRUE)
-print(args)
-print(length(args))
+
 suppressPackageStartupMessages({
     library(mashr)
     library(mvsusieR)
@@ -18,10 +17,9 @@ mash_prior_positives <- readRDS(args[1])
 group_names <- unlist(strsplit(args[2], ","))
 # genes
 gene_names <- args[3:length(args)]
-print(gene_names)
 
 for (gene_name in gene_names){
-    print(gene_name)
+    message(gene_name)
     # regressed genotypes from python generation,
     #   e.g. "HES4_tensorqtl_regressed_genotypes.csv"
     genotypes <- paste0("genotype_files_dir/", gene_name,
