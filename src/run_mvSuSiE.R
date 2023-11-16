@@ -38,7 +38,7 @@ for (gene_name in gene_names){
 
     # check if we have any variants with same genotype across all donors
         # homogenous pop (SD of 0), will fail in mvsusie
-    if (any(apply(X_mvsusie, 2, sd, na.rm=TRUE) == 0)) {
+    if (any(apply(x_mvsusie, 2, sd, na.rm=TRUE) == 0)) {
         next
     }
 
