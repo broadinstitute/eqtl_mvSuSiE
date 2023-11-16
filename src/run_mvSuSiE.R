@@ -36,6 +36,12 @@ for (gene_name in gene_names){
 
     x_mvsusie <- t(x[, rownames(y_mvsusie)])
 
+    # check if we have any variants with same genotype across all donors
+        # homogenous pop (SD of 0), will fail in mvsusie
+    if (any(apply(X_mvsusie, 2, sd, na.rm=TRUE) == 0)) {
+        next
+    }
+
     # generate the prior from the mash strong object
     message("Generating prior objects.")
     newUlist <- mashr:::expand_cov(mash_prior_positives$fitted_g$Ulist,
