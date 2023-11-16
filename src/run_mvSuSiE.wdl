@@ -150,7 +150,7 @@ task run_mvSuSiE {
         headerfile="$(ls *_mvsusie_final_output.csv | tail -n1)"
         head -n 1 $headerfile > mvsusie_final_output_${genes_underscore}.csv
         tail -n +2 -q *_mvsusie_final_output.csv >> mvsusie_final_output_${genes_underscore}.csv
-        tr ',' '\t' < mvsusie_final_output_five.csv > mvsusie_final_output_${genes_underscore}.tsv
+        tr ',' '\t' < mvsusie_final_output_${genes_underscore}.csv > mvsusie_final_output_${genes_underscore}.tsv
     }
 
     output {
