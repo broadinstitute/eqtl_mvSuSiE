@@ -134,8 +134,12 @@ task run_mvSuSiE {
         String docker_image
     }
 
+    String genes_underscore = sub(genes, " ", "_") # gene_names joined by _
+
     command {
         set -ex
+        echo "gene names with underscore: " ${genes_underscore}
+
         (git clone https://github.com/broadinstitute/eqtl_mvSuSiE.git /app ; cd /app)
         mkdir genotype_files_dir
         mkdir phenotype_files_dir
@@ -144,13 +148,13 @@ task run_mvSuSiE {
         Rscript /app/src/run_mvSuSiE.R ${mashr_strong_prior} ${sep=',' sample_names} ${genes}
 
         headerfile="$(ls *_mvsusie_final_output.csv | tail -n1)"
-        head -n 1 $headerfile > mvsusie_final_output_five.csv
-        tail -n +2 -q *_mvsusie_final_output.csv >> mvsusie_final_output_five.csv
-        tr ',' '\t' < mvsusie_final_output_five.csv > mvsusie_final_output_five.tsv
+        head -n 1 $headerfile > mvsusie_final_output_${genes_underscore}.csv
+        tail -n +2 -q *_mvsusie_final_output.csv >> mvsusie_final_output_${genes_underscore}.csv
+        tr ',' '\t' < mvsusie_final_output_five.csv > mvsusie_final_output_${genes_underscore}.tsv
     }
 
     output {
-        File mvsusie_results = "mvsusie_final_output_five.tsv"
+        File mvsusie_results = "mvsusie_final_output_${genes_underscore}.tsv"
     }
     runtime {
             docker: docker_image
