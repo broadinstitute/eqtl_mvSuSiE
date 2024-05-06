@@ -16,3 +16,5 @@ Runs mvsusie for 5 genes at a time, across all genes in parallel
 
 Returns dataframe with columns 'phenotype_id', 'Method', 'Variant_id', 'PIP', 'Credible Set', and betas for each response variable (in our case, ipsd0, hepd2, etc).
 Genes and the variants in each of their credible sets should have results.
+
+### mvsusie documentation for help: https://stephenslab.github.io/mvsusieR/reference/mvsusie.html
